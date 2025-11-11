@@ -1,0 +1,79 @@
+name: Serverless API Deployment # Name visible in the GitHub Actions tab
+
+# 1. TRIGGER: Run automatically on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+# Define environment variables used throughout the job
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: inventory-api-repo # Must match the ECR name in your main.tf
+  
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # Use a standard Linux runner provided by GitHub
+    
+    steps:
+    # --- STAGE 1: SETUP AND AUTHENTICATION ---
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      # This action securely retrieves your secrets and sets environment variables
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    # --- STAGE 2: CONTAINER BUILD AND PUSH ---
+    - name: Login to Amazon ECR
+      # Authenticates the Docker client using the AWS credentials
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    
+    - name: Set Image Tag
+      id: set-tag
+      # Sets the unique image tag using the Git commit SHA (best practice for versioning)
+      run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
+      
+    - name: Build and Tag Docker image
+      working-directory: ./lambda_function/ # Crucial: run command in the folder with the Dockerfile
+      run: |
+        # Build the image and tag it with the unique SHA
+        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        # Tag with the full ECR registry URL for pushing
+        docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+        
+    - name: Push Docker image to ECR
+      # Pushes the container image artifact to AWS ECR
+      run: docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # --- STAGE 3: INFRASTRUCTURE DEPLOYMENT (TERRAFORM) ---
+    - name: Setup Terraform
+      # Installs the Terraform CLI on the runner
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.x 
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ./terraform # Crucial: run command in the folder with the .tf files
+
+    - name: Terraform Plan
+      # Passes the unique image tag from the Docker step to a Terraform variable (-var flag)
+      run: terraform plan -out=tfplan -var="image_tag=$IMAGE_TAG"
+      working-directory: ./terraform
+
+    - name: Terraform Apply
+      # Executes the plan, deploying the full infrastructure
+      run: terraform apply -auto-approve tfplan
+      working-directory: ./terraform
+
+    # --- STAGE 4: OUTPUT ---
+    - name: Output API URL
+      # Gets the final API URL (defined in outputs.tf) and prints it to the console
+      run: terraform output -raw api_url
+      working-directory: ./terraform
