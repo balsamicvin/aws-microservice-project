@@ -1,0 +1,7 @@
+# Ignore Terraform provider cache and local state files
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore Docker cache if present
+.docker
