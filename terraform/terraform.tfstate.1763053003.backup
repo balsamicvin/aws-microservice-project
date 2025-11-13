@@ -1,7 +1,7 @@
 {
   "version": 4,
   "terraform_version": "1.13.5",
-  "serial": 7,
+  "serial": 6,
   "lineage": "0d537e12-971f-8fa5-2600-68669b6a6d04",
   "outputs": {
     "api_url": {
@@ -348,6 +348,34 @@
           "sensitive_attributes": [],
           "identity_schema_version": 0,
           "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMCJ9"
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "apigateway_permission",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "action": "lambda:InvokeFunction",
+            "event_source_token": null,
+            "function_name": "inventory-ms-inventory-lambda",
+            "function_url_auth_type": null,
+            "id": "AllowExecutionFromAPIGateway",
+            "principal": "apigateway.amazonaws.com",
+            "principal_org_id": null,
+            "qualifier": "",
+            "source_account": null,
+            "source_arn": "arn:aws:execute-api:us-east-1:626145679761:yf36z818v4/*/*",
+            "statement_id": "AllowExecutionFromAPIGateway",
+            "statement_id_prefix": ""
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
         }
       ]
     }
