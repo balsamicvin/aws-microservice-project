@@ -115,6 +115,11 @@ resource "aws_lambda_function" "inventory_lambda" {
 }
 
 # Create the HTTP API Gateway
+resource "aws_apigatewayv2_api" "inventory_api" {
+  name          = "${var.project_name}-inventory-api"
+  protocol_type = "HTTP"
+}
+
 resource "aws_apigatewayv2_route" "inventory_route" {
   api_id    = aws_apigatewayv2_api.inventory_api.id
   route_key = "ANY /inventory" 
