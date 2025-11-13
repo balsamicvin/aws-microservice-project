@@ -130,14 +130,6 @@ resource "aws_apigatewayv2_integration" "inventory_integration" {
   payload_format_version = "2.0" # Use v2.0 for simpler Lambda integration payload
 }
 
-# Define the route for all CRUD operations on /items
-resource "aws_apigatewayv2_route" "inventory_route" {
-  api_id    = aws_apigatewayv2_api.inventory_api.id
-  # Use 'ANY' method to handle POST, GET, PUT, DELETE, etc., and map them to the same Lambda
-  route_key = "ANY /items/{proxy+}"
-  target    = "integrations/${aws_apigatewayv2_integration.inventory_integration.id}"
-}
-
 # Deploy the API
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.inventory_api.id
