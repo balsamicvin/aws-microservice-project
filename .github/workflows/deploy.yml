@@ -22,9 +22,9 @@ jobs:
     
       # ➡️ ADD THIS STEP HERE TO INSTALL TERRAFORM ⬅️
     - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "latest" # Installs the latest stable version
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "latest" # Installs the latest stable version
 
     - name: Configure AWS Credentials
       # This action securely retrieves your secrets and sets environment variables
