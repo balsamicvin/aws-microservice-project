@@ -1,8 +1,8 @@
 # DynamoDB table to define database and optimize costs.
 resource "aws_dynamodb_table" "inventory_table" {
-  name             = "${var.project_name}-inventory-table"
-  hash_key         = "id"
-  billing_mode     = "PAY_PER_REQUEST"
+  name              = "${var.project_name}-inventory-table"
+  hash_key          = "id"
+  billing_mode      = "PAY_PER_REQUEST"
 
   attribute {
     name = "id"
@@ -44,6 +44,7 @@ data "aws_iam_policy_document" "lambda_policy_document" {
       "dynamodb:UpdateItem",
       "dynamodb:DeleteItem",
       "dynamodb:Scan",
+      "dynamodb:ListTables" # Added for robustness, as discussed previously
     ]
     # CRUCIAL: Restrict access ONLY to the specific DynamoDB ARN
     resources = [aws_dynamodb_table.inventory_table.arn]
@@ -114,28 +115,32 @@ resource "aws_lambda_function" "inventory_lambda" {
   }
 }
 
-# Create the HTTP API Gateway
+# --- API GATEWAY RESOURCES (Reordered for correct dependency) ---
+
+# 1. Create the HTTP API Gateway (Reference is made to this next)
 resource "aws_apigatewayv2_api" "inventory_api" {
   name          = "${var.project_name}-inventory-api"
   protocol_type = "HTTP"
 }
 
-resource "aws_apigatewayv2_route" "inventory_route" {
-  api_id    = aws_apigatewayv2_api.inventory_api.id
-  route_key = "ANY /inventory" 
-  target    = "integrations/${aws_apigatewayv2_integration.inventory_integration.id}"
-}
-
-# Define the integration that links the API Gateway to the Lambda function
+# 2. Define the integration that links the API Gateway to the Lambda function (References the API and Lambda)
 resource "aws_apigatewayv2_integration" "inventory_integration" {
-  api_id             = aws_apigatewayv2_api.inventory_api.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.inventory_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.inventory_api.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.inventory_lambda.invoke_arn
   payload_format_version = "2.0" # Use v2.0 for simpler Lambda integration payload
 }
 
-# Deploy the API
+# 3. Define the route (References the API and the Integration)
+resource "aws_apigatewayv2_route" "inventory_route" {
+  api_id    = aws_apigatewayv2_api.inventory_api.id
+  # FIX: Setting the correct path for CRUD operations
+  route_key = "ANY /items/{proxy+}" 
+  target    = "integrations/${aws_apigatewayv2_integration.inventory_integration.id}"
+}
+
+# 4. Deploy the API (References the API)
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.inventory_api.id
   name        = "$default"
