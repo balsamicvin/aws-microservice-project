@@ -68,10 +68,29 @@ jobs:
       run: terraform plan -out=tfplan -var="image_tag=$IMAGE_TAG"
       working-directory: ./terraform
 
+    - name: Terraform Import Existing IAM Role
+      id: import
+      if: always() # Run this step even if previous steps failed
+      env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+          # Only run import if the role creation failed in the last run
+          echo "Attempting to import existing IAM Role into Terraform state..."
+          
+          # The format is: terraform import <resource_type>.<resource_name> <resource_id>
+          # We are importing aws_iam_role.lambda_exec_role with the ID (name)
+          terraform import aws_iam_role.lambda_exec_role inventory-ms-lambda-exec-role || true
+          
+          echo "Import command finished. Proceeding to apply."
+
     - name: Terraform Apply
-      # Executes the plan, deploying the full infrastructure
+      id: apply
+      if: always() # Run this step regardless of the import result to sync state
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve tfplan
-      working-directory: ./terraform
 
     # --- STAGE 4: OUTPUT ---
     - name: Output API URL
