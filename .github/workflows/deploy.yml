@@ -83,6 +83,7 @@ jobs:
           terraform import aws_iam_role.lambda_exec_role inventory-ms-lambda-exec-role || true
           
           echo "Import command finished. Proceeding to apply."
+      working-directory: ./terraform
 
     - name: Terraform Apply
       id: apply
@@ -91,9 +92,11 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve tfplan
+      working-directory: ./terraform
 
     # --- STAGE 4: OUTPUT ---
     - name: Output API URL
       # Gets the final API URL (defined in outputs.tf) and prints it to the console
       run: terraform output -raw api_url
       working-directory: ./terraform
+# TEMP_COMMIT_FIX_1
