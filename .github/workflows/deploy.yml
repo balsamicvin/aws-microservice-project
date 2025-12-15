@@ -83,6 +83,15 @@ jobs:
           echo "Import command finished. Proceeding to apply."
       working-directory: ./terraform
 
+    - name: Import Existing Lambda Permission
+      run: |
+        echo "Attempting to import existing Lambda Permission..."
+        terraform import \
+          aws_lambda_permission.apigateway_permission \
+          inventory-ms-inventory-lambda/AllowExecutionFromAPIGateway || true
+      working-directory: ./terraform
+
+
     - name: Terraform Apply
       id: apply
       if: always() # Run this step regardless of the import result to sync state
