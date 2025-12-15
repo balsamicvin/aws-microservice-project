@@ -91,7 +91,13 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         IMAGE_TAG: ${{ env.IMAGE_TAG }}
 
-      run: terraform apply -auto-approve tfplan
+      run: |
+        echo "Starting Terraform apply..."
+        terraform apply \
+        -auto-approve \
+        -var="image_tag=$IMAGE_TAG"
+
+        echo "Terraform apply finished."
       working-directory: ./terraform
 
     # --- STAGE 4: OUTPUT ---
