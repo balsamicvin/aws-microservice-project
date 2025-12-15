@@ -84,9 +84,12 @@ jobs:
       working-directory: ./terraform
 
     - name: Import Existing Lambda Permission
+      env:
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
       run: |
         echo "Attempting to import existing Lambda Permission..."
         terraform import \
+          -var="image_tag=$IMAGE_TAG" \
           aws_lambda_permission.apigateway_permission \
           inventory-ms-inventory-lambda/AllowExecutionFromAPIGateway || true
       working-directory: ./terraform
